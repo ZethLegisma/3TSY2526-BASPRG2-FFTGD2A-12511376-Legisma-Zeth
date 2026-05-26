@@ -61,7 +61,7 @@ int placeBetReturn(int& playerGold) {
     }
 }
 
-// Does the same as the last one but uses a reference parameter
+// Returns as void
 void placeBetVoid(int& playerGold, int& currentBet) {
     while (true) {
         cout << "Current Gold: " << playerGold << "\n";
