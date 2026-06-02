@@ -1,0 +1,78 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <cstdlib> 
+#include <ctime>   
+
+using namespace std;
+
+//Ex 2-1 Inventory Fill
+vector<string> fillInventory() {
+    vector<string> inventory;
+
+    //List of items that can be randomly chosen
+    vector<string> availableItems = { "RedPotion", "Elixir", "EmptyBottle", "BluePotion" };
+
+    //Picks a random number between 0 to 3 which are the ItemID of the items
+    for (int i = 0; i < 10; i++) {
+        inventory.push_back(availableItems[rand() % 4]);
+    }
+    return inventory;
+}
+
+//Ex 2-2 Display Inventory
+//Displays the item chosen and aranges them in a bulletpoint form
+void displayInventory(vector<string>& inventory) {
+    cout << "Current Inventory:\n==================\n";
+    for (string item : inventory) {
+        cout << "- " << item << "\n";
+    }
+    cout << "==================\n";
+}
+
+//Ex 2-3 Count Item
+//Counts how many "RedPotion" there are
+int countItem(vector<string>& inventory, string itemToCount) {
+    int count = 0;
+    for (string item : inventory) { // Cleaner for-each loop
+        if (item == itemToCount) {
+            count++;
+        }
+    }
+    return count;
+}
+
+//Ex 2-4 Remove Item
+//Removes item, loops backwards because by removing an item normally will make the item below the removed item will be skipped into being checked if they are item to be removed.
+void removeItem(vector<string>& inventory, string itemToRemove) {
+    for (int i = inventory.size() - 1; i >= 0; i--) {
+        if (inventory[i] == itemToRemove) {
+            inventory.erase(inventory.begin() + i);
+        }
+    }
+}
+
+int main() {
+    srand(time(0));
+
+    //Ex 2-1 Fills the inventory with the max limit of 10 items
+    vector<string> playerInventory = fillInventory();
+
+    //Ex 2-2 Display the current inventory
+    displayInventory(playerInventory);
+
+    //Ex 2-3 Counts the instance of an item which is "RedPotion"
+    string ItemTarget = "RedPotion";
+    cout << "\n--------------------------------------\n";
+    cout << "Number of '" << ItemTarget << "' in inventory: " << countItem(playerInventory, ItemTarget) << "\n\n";
+
+    //Ex 2-4 Removes the specific item which is "EmptyBottle"
+    string ItemRemoval = "EmptyBottle";
+    cout << "Removing all instances of '" << ItemRemoval << "'...\n";
+    removeItem(playerInventory, ItemRemoval);
+    cout << "--------------------------------------\n\n";
+
+    //Displays the updated inventory that has removed the EmptyBottle
+    displayInventory(playerInventory);
+    return 0;
+}
