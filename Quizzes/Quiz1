@@ -6,12 +6,12 @@
 
 using namespace std;
 
-// assigns an integer for the cards to categorize them
+// Assigns an integer for the cards to categorize them
 const int CIVILIAN = 0;
 const int EMPEROR = 1;
 const int SLAVE = 2;
 
-// functions and integers
+// Functions and integers
 vector<int> createDeck(string side);
 void displayDeck(const vector<int>& deck);
 int getWager(int mmLeft);
@@ -21,7 +21,7 @@ int Matchup(int playerCard, int enemyCard);
 void playRound(int round, int& mmLeft, long long& moneyEarned);
 
 int main() {
-    srand(time(0)); 
+    srand(time(0));
 
     int round = 1;
     int mmLeft = 30;
@@ -68,13 +68,17 @@ vector<int> createDeck(string side) {
     return deck;
 }
 
-// Shows what current cards you have 
+// Shows what current cards you have using a clean switch statement
 void displayDeck(const vector<int>& deck) {
     cout << "Your cards: ";
     for (size_t i = 0; i < deck.size(); i++) {
-        if (deck[i] == CIVILIAN) cout << "[" << i + 1 << ": Civilian] ";
-        else if (deck[i] == EMPEROR) cout << "[" << i + 1 << ": Emperor] ";
-        else cout << "[" << i + 1 << ": Slave] ";
+        cout << "[" << i + 1 << ": ";
+        switch (deck[i]) {
+        case CIVILIAN: cout << "Civilian"; break;
+        case EMPEROR:  cout << "Emperor";  break;
+        case SLAVE:    cout << "Slave";    break;
+        }
+        cout << "] ";
     }
     cout << "\n";
 }
@@ -90,7 +94,7 @@ int getWager(int mmLeft) {
     }
 }
 
-// Handles the user's card and plays them
+// Handles the user's card and deletes it from vector 
 int playerPlayCard(vector<int>& deck) {
     int choice;
     while (true) {
@@ -100,33 +104,54 @@ int playerPlayCard(vector<int>& deck) {
 
         if (choice >= 1 && choice <= (int)deck.size()) {
             int playedCard = deck[choice - 1];
-            deck.erase(deck.begin() + (choice - 1)); 
+            deck.erase(deck.begin() + (choice - 1)); // removes card cleanly from vector
             return playedCard;
         }
         cout << "Invalid card. Try again.\n";
     }
 }
 
-// Selects a randomized card for opponent
+// Selects a randomized card for opponent and deletes it from vector 
 int enemyPlayCard(vector<int>& deck) {
     int index = rand() % deck.size();
     int playedCard = deck[index];
-    deck.erase(deck.begin() + index); 
+    deck.erase(deck.begin() + index); // removes card cleanly from vector
     return playedCard;
 }
 
-// Evaluates who wins the match (1 = player, -1 = opponent, 0 = Draw)
+// Evaluates who wins the match 
 int Matchup(int playerCard, int enemyCard) {
-    if (playerCard == enemyCard) return 0;
-    if (playerCard == EMPEROR && enemyCard == CIVILIAN) return 1;
-    if (playerCard == CIVILIAN && enemyCard == SLAVE) return 1;
-    if (playerCard == SLAVE && enemyCard == EMPEROR) return 1;
-    return -1;
+    if (playerCard == enemyCard) return 0; // tie
+
+    switch (playerCard) {
+    case EMPEROR:
+        if (enemyCard == CIVILIAN) {
+            return 1;
+        }
+        else {
+            return -1;
+        }
+    case CIVILIAN:
+        if (enemyCard == SLAVE) {
+            return 1;
+        }
+        else {
+            return -1;
+        }
+    case SLAVE:
+        if (enemyCard == EMPEROR) {
+            return 1;
+        }
+        else {
+            return -1;
+        }
+    default:
+        return -1;
+    }
 }
 
-// executes a round in order
+// Executes a round in order
 void playRound(int round, int& mmLeft, long long& moneyEarned) {
-    // Exact sequence of what rounds will be played
     string sideSchedule[] = {
         "Emperor", "Emperor", "Emperor",
         "Slave", "Slave", "Slave",
@@ -135,7 +160,14 @@ void playRound(int round, int& mmLeft, long long& moneyEarned) {
     };
 
     string kaijiSide = sideSchedule[round - 1];
-    string tonegawaSide = (kaijiSide == "Emperor") ? "Slave": "Emperor";
+    string tonegawaSide;
+
+    if (kaijiSide == "Emperor") {
+        tonegawaSide = "Slave";
+    }
+    else {
+        tonegawaSide = "Emperor";
+    }
 
     cout << "\n=== ROUND " << round << " (" << kaijiSide << " Side) ===\n";
     cout << "Stats: " << mmLeft << "mm left | " << moneyEarned << " Yen earned\n";
@@ -144,26 +176,50 @@ void playRound(int round, int& mmLeft, long long& moneyEarned) {
     vector<int> kaijiHand = createDeck(kaijiSide);
     vector<int> tonegawaHand = createDeck(tonegawaSide);
 
-    // Displays the match and what card the player and opponent chose
-    // playing in the perspective of Kaiji, hence the player is named Kaiji, and the opponent is Tonegawa
     while (true) {
         int pCard = playerPlayCard(kaijiHand);
         int eCard = enemyPlayCard(tonegawaHand);
 
-        cout << "You played " << (pCard == CIVILIAN ? "Civilian" : (pCard == EMPEROR ? "Emperor": "Slave"));
-        cout << " vs Tonegawa's " << (eCard == CIVILIAN ? "Civilian" : (eCard == EMPEROR ? "Emperor": "Slave")) << "\n";
+        // card choices of the players and display what they chose
+        string pCardStr, eCardStr;
+        switch (pCard) {
+        case CIVILIAN: pCardStr = "Civilian";
+            break;
+        case EMPEROR:  pCardStr = "Emperor";
+            break;
+        case SLAVE:    pCardStr = "Slave";
+            break;
+        }
+        switch (eCard) {
+        case CIVILIAN: eCardStr = "Civilian";
+            break;
+        case EMPEROR:  eCardStr = "Emperor";
+            break;
+        case SLAVE:    eCardStr = "Slave";
+            break;
+        }
 
+        cout << "You played " << pCardStr << " vs Tonegawa's " << eCardStr << "\n";
+
+        // win/lose outcome in the match
         int result = Matchup(pCard, eCard);
         if (result == 1) {
-            long long reward = (kaijiSide == "Emperor") ? (currentWager * 100000LL) : (currentWager * 500000LL);
+            long long reward = 0;
+
+            if (kaijiSide == "Emperor") {
+                reward = currentWager * 100000LL;
+            }
+            else {
+                reward = currentWager * 500000LL;
+            }
             moneyEarned += reward;
             cout << "You won this round. Earned " << reward << " Yen.\n";
-            break; 
+            break;
         }
         else if (result == -1) {
             mmLeft -= currentWager;
             cout << "You lost this round. Lost " << currentWager << "mm.\n";
-            break; 
+            break;
         }
         else {
             cout << "Both played Civilian. Play another card\n\n";
