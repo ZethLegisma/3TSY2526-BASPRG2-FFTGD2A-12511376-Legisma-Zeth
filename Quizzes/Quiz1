@@ -1,0 +1,172 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <cstdlib>
+#include <ctime>
+
+using namespace std;
+
+// assigns an integer for the cards to categorize them
+const int CIVILIAN = 0;
+const int EMPEROR = 1;
+const int SLAVE = 2;
+
+// functions and integers
+vector<int> createDeck(string side);
+void displayDeck(const vector<int>& deck);
+int getWager(int mmLeft);
+int playerPlayCard(vector<int>& deck);
+int enemyPlayCard(vector<int>& deck);
+int Matchup(int playerCard, int enemyCard);
+void playRound(int round, int& mmLeft, long long& moneyEarned);
+
+int main() {
+    srand(time(0)); 
+
+    int round = 1;
+    int mmLeft = 30;
+    long long moneyEarned = 0;
+
+    cout << "== GAME START ==\n";
+
+    // Loop until 12 rounds are finished or the eardrum is pierced
+    while (round <= 12 && mmLeft > 0) {
+        playRound(round, mmLeft, moneyEarned);
+        round++;
+    }
+
+    // Determine and display the final ending result
+    cout << "\nGAME OVER\n";
+    cout << "Final Earnings: " << moneyEarned << " Yen\n";
+    cout << "Millimeters Left: " << mmLeft << "mm\n";
+
+    if (mmLeft <= 0) {
+        cout << "Bad Ending (Eardrum has been Pierced)\n";
+    }
+    else if (moneyEarned >= 20000000) {
+        cout << "Best Ending (Won 20M+ Yen)\n";
+    }
+    else {
+        cout << "Meh Ending (Survived but missed 20M goal)\n";
+    }
+
+    return 0;
+}
+
+// Generates a 5 card deck for the player
+vector<int> createDeck(string side) {
+    vector<int> deck;
+    for (int i = 0; i < 4; i++) {
+        deck.push_back(CIVILIAN);
+    }
+    if (side == "Emperor") {
+        deck.push_back(EMPEROR);
+    }
+    else {
+        deck.push_back(SLAVE);
+    }
+    return deck;
+}
+
+// Shows what current cards you have 
+void displayDeck(const vector<int>& deck) {
+    cout << "Your cards: ";
+    for (size_t i = 0; i < deck.size(); i++) {
+        if (deck[i] == CIVILIAN) cout << "[" << i + 1 << ": Civilian] ";
+        else if (deck[i] == EMPEROR) cout << "[" << i + 1 << ": Emperor] ";
+        else cout << "[" << i + 1 << ": Slave] ";
+    }
+    cout << "\n";
+}
+
+// 1mm-30mm wage request for the round
+int getWager(int mmLeft) {
+    int wager;
+    while (true) {
+        cout << "Enter wager (1 to " << mmLeft << "mm): ";
+        cin >> wager;
+        if (wager >= 1 && wager <= mmLeft) return wager;
+        cout << "Invalid bet! Try again.\n";
+    }
+}
+
+// Handles the user's card and plays them
+int playerPlayCard(vector<int>& deck) {
+    int choice;
+    while (true) {
+        displayDeck(deck);
+        cout << "Choose a card to play: ";
+        cin >> choice;
+
+        if (choice >= 1 && choice <= (int)deck.size()) {
+            int playedCard = deck[choice - 1];
+            deck.erase(deck.begin() + (choice - 1)); 
+            return playedCard;
+        }
+        cout << "Invalid card. Try again.\n";
+    }
+}
+
+// Selects a randomized card for opponent
+int enemyPlayCard(vector<int>& deck) {
+    int index = rand() % deck.size();
+    int playedCard = deck[index];
+    deck.erase(deck.begin() + index); 
+    return playedCard;
+}
+
+// Evaluates who wins the match (1 = player, -1 = opponent, 0 = Draw)
+int Matchup(int playerCard, int enemyCard) {
+    if (playerCard == enemyCard) return 0;
+    if (playerCard == EMPEROR && enemyCard == CIVILIAN) return 1;
+    if (playerCard == CIVILIAN && enemyCard == SLAVE) return 1;
+    if (playerCard == SLAVE && enemyCard == EMPEROR) return 1;
+    return -1;
+}
+
+// executes a round in order
+void playRound(int round, int& mmLeft, long long& moneyEarned) {
+    // Exact sequence of what rounds will be played
+    string sideSchedule[] = {
+        "Emperor", "Emperor", "Emperor",
+        "Slave", "Slave", "Slave",
+        "Emperor", "Emperor", "Emperor",
+        "Slave", "Slave", "Slave"
+    };
+
+    string kaijiSide = sideSchedule[round - 1];
+    string tonegawaSide = (kaijiSide == "Emperor") ? "Slave": "Emperor";
+
+    cout << "\n=== ROUND " << round << " (" << kaijiSide << " Side) ===\n";
+    cout << "Stats: " << mmLeft << "mm left | " << moneyEarned << " Yen earned\n";
+
+    int currentWager = getWager(mmLeft);
+    vector<int> kaijiHand = createDeck(kaijiSide);
+    vector<int> tonegawaHand = createDeck(tonegawaSide);
+
+    // Displays the match and what card the player and opponent chose
+    // playing in the perspective of Kaiji, hence the player is named Kaiji, and the opponent is Tonegawa
+    while (true) {
+        int pCard = playerPlayCard(kaijiHand);
+        int eCard = enemyPlayCard(tonegawaHand);
+
+        cout << "You played " << (pCard == CIVILIAN ? "Civilian" : (pCard == EMPEROR ? "Emperor": "Slave"));
+        cout << " vs Tonegawa's " << (eCard == CIVILIAN ? "Civilian" : (eCard == EMPEROR ? "Emperor": "Slave")) << "\n";
+
+        int result = Matchup(pCard, eCard);
+        if (result == 1) {
+            long long reward = (kaijiSide == "Emperor") ? (currentWager * 100000LL) : (currentWager * 500000LL);
+            moneyEarned += reward;
+            cout << "You won this round. Earned " << reward << " Yen.\n";
+            break; 
+        }
+        else if (result == -1) {
+            mmLeft -= currentWager;
+            cout << "You lost this round. Lost " << currentWager << "mm.\n";
+            break; 
+        }
+        else {
+            cout << "Both played Civilian. Play another card\n\n";
+        }
+    }
+}
