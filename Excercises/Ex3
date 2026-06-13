@@ -1,0 +1,126 @@
+#include <iostream>
+#include <string>
+#include <cstdlib>
+#include <ctime>
+
+using namespace std;
+
+// Ex3-1 Item struct
+struct Item
+{
+    string name;
+    int gold;
+};
+
+int playerGold = 50;
+const int TARGET_GOLD = 500;
+const int DUNGEON_FEE = 25;
+
+// item instances so it wwould easily return their addresses
+Item mithril = { "Mithril Ore", 100 };
+Item talon = { "Sharp Talon", 50 };
+Item leather = { "Thick Leather", 25 };
+Item jellopy = { "Jellopy", 5 };
+Item cursedStone = { "Cursed Stone", 0 };
+
+// Picks a random item from the switch case
+Item* generateRandomItem()
+{
+    int roll = rand() % 5;
+
+    switch (roll)
+    {
+    case 0:
+        return &mithril;
+    case 1:
+        return &talon;
+    case 2:
+        return &leather;
+    case 3:
+        return &jellopy;
+    case 4:
+        return &cursedStone;
+    default:
+        return &jellopy;
+    }
+}
+
+// Ex3-2 Enter Dungeon Loop
+void enterDungeon()
+{
+    cout << "\n=== Entering Dungeon! Paid a 25 gold fee. ===" << endl;
+    playerGold -= DUNGEON_FEE;
+    cout << "Current Satchel Gold: " << playerGold << "\n" << endl;
+
+    int runGold = 0;
+    int multiplier = 1;
+    char choice;
+
+    while (true)
+    {
+        Item* loot = generateRandomItem();
+        cout << "You found: " << loot->name << endl;
+
+        // Checks if the player receives the cursed stone
+        if (loot->name == "Cursed Stone")
+        {
+            cout << "You have gotten the Cursed Stone. Fall, child. You died and lost everything this run." << endl;
+            runGold = 0;
+            break;
+        }
+
+        // Calculates the gold with the gold multiplier
+        int value = loot->gold * multiplier;
+        runGold += value;
+
+        // Tracking total gold the player has (satchel gold and dungeon gold)
+        int totalPendingGold = playerGold + runGold;
+
+        cout << "Earned " << value << " gold! (Multiplier: x" << multiplier << ")" << endl;
+        cout << "---> Total pending gold " << totalPendingGold << " | " << TARGET_GOLD << endl;
+
+        // y/n system
+        cout << "Go deeper? (y/n): ";
+        cin >> choice;
+
+        if (choice == 'y' || choice == 'Y')
+        {
+            multiplier++;
+            cout << "Going deeper, you have been brave\n" << endl;
+        }
+        else
+        {
+            cout << "Retreating with the gold" << endl;
+            playerGold += runGold; // adds dungeon gold to sachel gold to compile 
+            break;
+        }
+    }
+
+    cout << "End of run. Current wallet total: " << playerGold << " gold." << endl;
+}
+
+// Ex3-3 Main game condition 
+int main()
+{
+    srand(time(0));
+
+    cout << "=== WELCOME TO THE DUNGEON ===" << endl;
+
+    while (playerGold >= DUNGEON_FEE && playerGold < TARGET_GOLD)
+    {
+        enterDungeon();
+    }
+
+    cout << "\n==========================" << endl;
+    if (playerGold >= TARGET_GOLD)
+    {
+        cout << "You have won, child. Reached target gold: " << playerGold << "" << endl;
+    }
+    else
+    {
+        cout << "Game over. how dissapointing child, you had " << playerGold << " left." << endl;
+    }
+    cout << "==========================" << endl;
+
+    return 0;
+} 
