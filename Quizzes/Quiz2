@@ -1,0 +1,138 @@
+#ifndef NODE_H
+#define NODE_H
+
+#include <string>
+
+struct Node
+{
+    std::string name;
+    Node* next = NULL;
+    Node* previous = NULL;
+};
+
+#endif 
+#include <iostream>
+#include <string>
+#include <cstdlib>
+#include <ctime>
+#include "Node.h"
+
+using namespace std;
+
+// functions
+Node* addSoldier(Node* tail, string name);
+void Roster(Node* start, int total);
+Node* killSoldier(Node*& curr, int total);
+
+int main() {
+    // randomizes the soldiers order
+    srand((unsigned int)time(NULL));
+
+    Node* tail = nullptr;
+    int total = 0;
+    string input = "";
+
+    // getting soldier names from user 
+    while (total < 5) {
+        cout << "What's your name soldier? ";
+        getline(cin, input);
+        if (input != "") {
+            tail = addSoldier(tail, input);
+            total++;
+        }
+    }
+
+    // randomize selection clockwise
+    Node* curr = tail->next;
+    int steps = rand() % total;
+    for (int i = 0; i < steps; i++) {
+        curr = curr->next;
+    }
+    cout << endl;
+
+    int roundNum = 1;
+    // loop runs down until total is 0 (which is 1 soldier left)
+    while (total > 0) {
+        switch (total) {
+        case 1:
+            // final results printout 
+            cout << "============================\n";
+            cout << "  FINAL RESULT\n";
+            cout << "============================\n";
+            cout << "   " << curr->name << " will go to seek for reinforcements." << endl << endl;
+
+            delete curr; // disentigrates the memory of the last guy
+            total--;
+            break;
+
+        default:
+            cout << "============================\n";
+            cout << "ROUND " << roundNum << "\n";
+            cout << "============================\n";
+
+            Roster(curr, total);
+            curr = killSoldier(curr, total); // updates cloak holder, handles deletion
+
+            total--;
+            roundNum++;
+            break;
+        }
+    }
+
+    cout << "Press any key to continue";
+    cin.get();
+    return 0;
+}
+
+// changes node memory and links it to circular array ring
+Node* addSoldier(Node* tail, string name) {
+    Node* temp = new Node();
+    temp->name = name;
+
+    if (tail == nullptr) {
+        temp->next = temp;
+        temp->previous = temp;
+        return temp;
+    }
+
+    Node* head = tail->next;
+    temp->next = head;
+    temp->previous = tail;
+    tail->next = temp;
+    head->previous = temp;
+    return temp;
+}
+
+// prints everyone left in the lineup
+void Roster(Node* start, int total) {
+    cout << "Remaining Members:" << endl;
+    Node* temp = start;
+    for (int i = 0; i < total; i++) {
+        cout << "    " << temp->name << "\n";
+        temp = temp->next;
+    }
+    cout << "\n";
+}
+
+// drops nodes, points neighbors to each other, hands over cloak
+Node* killSoldier(Node*& curr, int total) {
+    int roll = (rand() % total) + 1;
+    cout << "Result:\n   " << curr->name << " has drawn " << roll << endl;
+
+    Node* victim = curr;
+    for (int i = 0; i < roll; i++) {
+        victim = victim->next;
+    }
+    cout << "   " << victim->name << " was eliminated\n\n";
+
+    Node* nextInLine = victim->next;
+    Node* leftGuy = victim->previous;
+    Node* rightGuy = victim->next;
+
+    // bridge the neighbors around the deleted guy
+    leftGuy->next = rightGuy;
+    rightGuy->previous = leftGuy;
+
+    delete victim;
+    return nextInLine;
+}
