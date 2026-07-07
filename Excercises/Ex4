@@ -132,7 +132,7 @@ void Spell::Activate(Wizard* caster, Wizard* target) {
     }
     else {
         // this shouldn't happen because of takeTurn checks but just in case
-        cout << " ! Fail! Not enough MP to cast " << name << "\n";
+        cout << "! Fail! Not enough MP to cast " << name << "\n";
     }
 }
 
@@ -142,7 +142,7 @@ int main() {
     srand(static_cast<unsigned int>(time(0)));
 
     cout << "========================================\n";
-    cout << "         LOADING SIMULATION...          \n";
+    cout << "                LOADING...              \n";
     cout << "========================================\n";
 
     // Allocating wizards dynamically
@@ -193,7 +193,7 @@ int main() {
 
     // Ex 4-4: Clean up memory explicitly
     cout << "========================================\n";
-    cout << "           FREEING HEAP MEMORY...       \n";
+    cout << "           FREEING MEMORY...            \n";
     cout << "========================================\n";
     delete w1;
     delete w2;
