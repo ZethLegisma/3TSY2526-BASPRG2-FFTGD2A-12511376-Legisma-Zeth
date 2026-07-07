@@ -1,0 +1,205 @@
+#include <iostream>
+#include <string>
+#include <cstdlib>
+#include <ctime>
+
+using namespace std;
+
+// Declares what wizard is
+class Wizard;
+
+// Ex 4-2: Spell Class
+class Spell {
+private:
+    string name;
+    int minDmg, maxDmg; // combined these into one line dwadswads
+    int mpCost;
+
+public:
+    Spell(string spellName, int minD, int maxD, int cost) {
+        name = spellName;
+        minDmg = minD;
+        maxDmg = maxD;
+        mpCost = cost;
+    }
+
+    ~Spell() {
+        cout << "[DEBUG/SYSTEM] Spell '" << name << "' destructor called! RIP memory.\n";
+    }
+
+    int getMpCost() const { return mpCost; }
+    string getName() const { return name; }
+
+    void Activate(Wizard* caster, Wizard* target);
+};
+
+// Ex 4-1: Wizard Class
+class Wizard {
+private:
+    string name;
+    int hp;
+    int mp;
+    int minDamage;
+    int maxDamage;
+    Spell* mySpell; // composition
+
+public:
+    Wizard(string wizName, int startHp, int minDmg, int maxDmg, Spell* wizSpell) {
+        name = wizName;
+        hp = startHp;
+        mp = 0; // starts at 0 mp because of instructions
+        minDamage = minDmg;
+        maxDamage = maxDmg;
+        mySpell = wizSpell;
+    }
+
+    // Ex 4-4: Destructor cleanup stuff
+    ~Wizard() {
+        cout << "[DEBUG/SYSTEM] deleting wizard: " << name << "...\n";
+        if (mySpell != nullptr) {
+            delete mySpell; // delete the spell instance
+            mySpell = nullptr;
+        }
+    }
+
+    string getName() const { return name; }
+    int getHP() const { return hp; }
+    int getMP() const { return mp; }
+    void setMP(int value) { mp = value; }
+
+    void takeDamage(int amount) {
+        hp -= amount;
+        if (hp < 0) hp = 0; // don't let it go below zero
+    }
+
+    bool isAlive() const {
+        return hp > 0;
+    }
+
+    void Attack(Wizard* target) {
+        // RNG for damage: min to max
+        int damage = minDamage + (rand() % (maxDamage - minDamage + 1));
+        // RNG for MP: 10 to 20
+        int mpGained = 10 + (rand() % (20 - 10 + 1));
+
+        mp += mpGained;
+        cout << " -> " << name << " bonks " << target->getName() << " with a stick for " << damage << " dmg!\n";
+        cout << "    [+" << mpGained << " MP] " << name << " now has " << mp << " MP\n";
+
+        target->takeDamage(damage);
+    }
+
+    // Ex 4-3: Turn Logic with a switch case
+    void takeTurn(Wizard* target) {
+        int choice = 0; // 0 = attack, 1 = spell
+
+        // check if we can cast
+        if (mySpell != nullptr && mp >= mySpell->getMpCost()) {
+            choice = 1;
+        }
+
+        // switch case like requested
+        switch (choice) {
+        case 1:
+            mySpell->Activate(this, target);
+            break;
+        default:
+            Attack(target);
+            break;
+        }
+    }
+
+    void displayStatus() const {
+        cout << " * " << name << " | HP: " << hp << " | MP: " << mp << "\n";
+    }
+};
+
+
+// Activate spell implementation
+void Spell::Activate(Wizard* caster, Wizard* target) {
+    if (caster->getMP() >= mpCost) {
+        // burn the MP
+        caster->setMP(caster->getMP() - mpCost);
+
+        // random spell damage
+        int damage = minDmg + (rand() % (maxDmg - minDmg + 1));
+
+        cout << caster->getName() << " drops a huge " << name << " on " << target->getName() << "!\n";
+        cout << "    Boom! Blasted for " << damage << " magic damage!\n";
+        cout << "    [-" << mpCost << " MP] (Remaining MP: " << caster->getMP() << ")\n";
+
+        target->takeDamage(damage);
+    }
+    else {
+        // this shouldn't happen because of takeTurn checks but just in case
+        cout << " ! Fail! Not enough MP to cast " << name << "\n";
+    }
+}
+
+// Main Client Code
+int main() {
+    // seed rng
+    srand(static_cast<unsigned int>(time(0)));
+
+    cout << "========================================\n";
+    cout << "         LOADING SIMULATION...          \n";
+    cout << "========================================\n";
+
+    // Allocating wizards dynamically
+    Wizard* w1 = new Wizard("Merlin", 250, 10, 15, new Spell("Mega Fireball", 40, 60, 50));
+    Wizard* w2 = new Wizard("Uriel", 250, 10, 15, new Spell("Lightning Bolt", 40, 60, 50));
+
+    cout << "Wizards spawned. Let's fight.\n\n";
+
+    int roundCounter = 1;
+    while (w1->isAlive() && w2->isAlive()) {
+        cout << "--- ROUND " << roundCounter << " ---\n";
+        w1->displayStatus();
+        w2->displayStatus();
+        cout << "--------------------\n";
+
+        // Turn 1
+        w1->takeTurn(w2);
+        if (!w2->isAlive()) {
+            cout << "\n>>> " << w2->getName() << " fainted mid-round! <<<\n";
+            break;
+        }
+
+        cout << "\n";
+
+        // Turn 2
+        w2->takeTurn(w1);
+
+        cout << "\n";
+        roundCounter++;
+
+        system("pause");
+        cout << "\n";
+    }
+
+    cout << "========================================\n";
+    cout << "              GAME OVER                 \n";
+    cout << "========================================\n";
+    w1->displayStatus();
+    w2->displayStatus();
+    cout << "\n";
+
+    if (w1->isAlive()) {
+        cout << "Winner: " << w1->getName() << "!\n\n";
+    }
+    else {
+        cout << "Winner: " << w2->getName() << "!\n\n";
+    }
+
+    // Ex 4-4: Clean up memory explicitly
+    cout << "========================================\n";
+    cout << "           FREEING HEAP MEMORY...       \n";
+    cout << "========================================\n";
+    delete w1;
+    delete w2;
+
+    cout << "\nEverything cleaned up. Exiting.\n";
+
+    system("pause");
+    return 0;
+}
