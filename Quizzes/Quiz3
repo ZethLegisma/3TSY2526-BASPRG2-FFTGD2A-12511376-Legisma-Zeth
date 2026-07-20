@@ -1,0 +1,410 @@
+#ifndef ENTITIES_H
+#define ENTITIES_H
+
+#include <iostream>
+#include <string>
+#include <cstdlib>
+
+using namespace std;
+
+// Enum for the classes
+enum ClassType {
+    WARRIOR = 1,
+    ASSASSIN = 2,
+    MAGE = 3
+};
+
+// Unit class for both player and enemy units
+class Unit {
+private:
+    string name;
+    ClassType classType;
+    int maxHp;
+    int currentHp;
+    int pow;
+    int vit;
+    int agi;
+    int dex;
+
+public:
+    // creates the unit and its attributes
+    Unit(string unitName, ClassType type, int hp, int power, int vitality, int agility, int dexterity) {
+        name = unitName;
+        classType = type;
+        maxHp = hp;
+        currentHp = hp;
+        pow = power;
+        vit = vitality;
+        agi = agility;
+        dex = dexterity;
+    }
+
+    // Destroys the unit 
+    ~Unit() {}
+
+    string getName() { return name; }
+    ClassType getClassType() { return classType; }
+    int getCurrentHp() { return currentHp; }
+    int getMaxHp() { return maxHp; }
+    int getPow() { return pow; }
+    int getVit() { return vit; }
+    int getAgi() { return agi; }
+    int getDex() { return dex; }
+
+    string getClassName() {
+        if (classType == WARRIOR) return "Warrior";
+        if (classType == ASSASSIN) return "Assassin";
+        if (classType == MAGE) return "Mage";
+        return "Unknown";
+    }
+
+    // Checks if unit is still alive
+    bool isAlive() {
+        return currentHp > 0;
+    }
+
+    // Calculate hit rate using DEX / AGI x 100
+    int CalcHitRate(Unit* defender) {
+        if (defender->getAgi() <= 0) return 80;
+
+        int hitRate = (dex * 100) / defender->getAgi();
+
+        if (hitRate < 20) hitRate = 20;
+        if (hitRate > 80) hitRate = 80;
+
+        return hitRate;
+    }
+
+    // Check if this unit is strong against defender's class using switch-case
+    bool isStrongAgainst(ClassType defenderClass) {
+        switch (classType) {
+        case WARRIOR: return (defenderClass == ASSASSIN);
+        case ASSASSIN: return (defenderClass == MAGE);
+        case MAGE: return (defenderClass == WARRIOR);
+        default: return false;
+        }
+    }
+
+    // Calculate total damage dealt using POW - VIT x bonusDamage
+    int calculateDamage(Unit* defender) {
+        int baseDamage = pow - defender->getVit();
+
+        if (isStrongAgainst(defender->getClassType())) {
+            baseDamage = (baseDamage * 3) / 2;
+        }
+
+        if (baseDamage < 1) {
+            baseDamage = 1;
+        }
+
+        return baseDamage;
+    }
+
+    void takeDamage(int damage) {
+        currentHp -= damage;
+        if (currentHp < 0) {
+            currentHp = 0;
+        }
+    }
+
+    void healPercentage(double percent) {
+        int healAmount = maxHp * percent;
+        currentHp += healAmount;
+
+        if (currentHp > maxHp) {
+            currentHp = maxHp;
+        }
+
+        cout << name << " healed for " << healAmount << " HP! (" << currentHp << "/" << maxHp << " HP)\n";
+    }
+
+    // Stat rewards given to the player once defeating an opponent 
+    void applyVictoryBonus(ClassType defeatedClass) {
+        switch (defeatedClass) {
+        case WARRIOR:
+            pow += 3;
+            vit += 3;
+            cout << "Victory Bonus: POW +3, VIT +3!\n";
+            break;
+        case ASSASSIN:
+            agi += 3;
+            dex += 3;
+            cout << "Victory Bonus: AGI +3, DEX +3!\n";
+            break;
+        case MAGE:
+            pow += 5;
+            cout << "Victory Bonus: POW +5!\n";
+            break;
+        }
+    }
+
+    void displayStats() {
+        cout << "===========================\n";
+        cout << " Name   : " << name << endl;
+        cout << " Class  : " << getClassName() << endl;
+        cout << " HP     : " << currentHp << " / " << maxHp << endl;
+        cout << " POW    : " << pow << " | VIT : " << vit << endl;
+        cout << " AGI    : " << agi << " | DEX : " << dex << endl;
+        cout << "===========================\n";
+    }
+};
+
+// Spawns enemy objects that get harder to defeat over time
+inline Unit* spawnEnemy(int stage) {
+    int randomNum = (rand() % 3) + 1;
+    ClassType randomClass;
+
+    if (randomNum == 1) randomClass = WARRIOR;
+    else if (randomNum == 2) randomClass = ASSASSIN;
+    else randomClass = MAGE;
+
+    string enemyName = "";
+    int hp = 0, pow = 0, vit = 0, agi = 0, dex = 0;
+    int growth = (stage - 1) * 3;
+
+    switch (randomClass) {
+    case WARRIOR:
+        enemyName = "Orc Warrior";
+        hp = 80 + (stage * 15);
+        pow = 12 + growth;
+        vit = 8 + growth;
+        agi = 6 + (stage * 2);
+        dex = 8 + (stage * 2);
+        break;
+    case ASSASSIN:
+        enemyName = "Shadow Assassin";
+        hp = 65 + (stage * 12);
+        pow = 10 + growth;
+        vit = 5 + growth;
+        agi = 12 + (stage * 3);
+        dex = 12 + (stage * 3);
+        break;
+    case MAGE:
+        enemyName = "Dark Mage";
+        hp = 60 + (stage * 10);
+        pow = 16 + (stage * 4);
+        vit = 4 + growth;
+        agi = 8 + (stage * 2);
+        dex = 10 + (stage * 2);
+        break;
+    }
+
+    return new Unit(enemyName, randomClass, hp, pow, vit, agi, dex);
+}
+
+------------------------------------------------------------------------------------------------------
+
+#endif
+#ifndef GAME_H
+#define GAME_H
+
+#include "Entities.h"
+
+// Player creation
+inline Unit* createPlayer() {
+    string playerName;
+    int classChoice = 0;
+
+    cout << "==================\n";
+    cout << "CHARACTER CREATION\n";
+    cout << "==================\n\n";
+
+    cout << "Enter player name: ";
+    getline(cin, playerName);
+
+    if (playerName == "") {
+        playerName = "Brave Adventurer";
+    }
+
+    cout << "\nSelect Class:\n";
+    cout << "1. Warrior  (High HP & VIT)\n";
+    cout << "2. Assassin (High AGI & DEX)\n";
+    cout << "3. Mage     (High POW)\n";
+    cout << "Choice (1-3): ";
+    cin >> classChoice;
+
+    while (classChoice < 1 || classChoice > 3) {
+        cout << "Invalid choice! Pick 1, 2, or 3: ";
+        cin >> classChoice;
+    }
+
+    cin.ignore();
+
+    system("pause");
+    system("cls");
+
+    cout << "You have been warned, dear adventurer\n";
+    cout << "Tread lightly\n\n";
+
+    system("pause");
+    system("cls");
+
+    ClassType selectedClass;
+    switch (classChoice) {
+    case 1: selectedClass = WARRIOR; break;
+    case 2: selectedClass = ASSASSIN; break;
+    case 3: selectedClass = MAGE; break;
+    }
+
+    if (selectedClass == WARRIOR) {
+        return new Unit(playerName, WARRIOR, 100, 15, 10, 8, 10);
+    }
+    else if (selectedClass == ASSASSIN) {
+        return new Unit(playerName, ASSASSIN, 80, 12, 6, 15, 15);
+    }
+    else if (selectedClass == MAGE) {
+        return new Unit(playerName, MAGE, 70, 20, 5, 10, 12);
+    }
+
+    return nullptr;
+}
+
+// Battle sequence logic
+inline bool startBattle(Unit* player, Unit* enemy, int stage) {
+    cout << "==============\n";
+    cout << "STAGE " << stage << " BATTLE\n";
+    cout << "==============\n";
+
+    cout << "\n[YOUR UNIT]\n";
+    player->displayStats();
+
+    cout << "\n[ENEMY ENCOUNTERED]\n";
+    enemy->displayStats();
+
+    system("pause");
+    system("cls");
+
+    int turnCount = 1;
+
+    while (player->isAlive() && enemy->isAlive()) {
+        cout << "\n--- Turn " << turnCount << " ---\n";
+
+        Unit* first = player;
+        Unit* second = enemy;
+
+        // Unit with higher AGI attacks first. If equal AGI, program prioritizes player
+        if (enemy->getAgi() > player->getAgi()) {
+            first = enemy;
+            second = player;
+        }
+
+        // First unit attacks
+        int hitPercent = first->CalcHitRate(second);
+        int roll = (rand() % 100) + 1;
+
+        cout << first->getName() << " attacks " << second->getName()
+            << " (Hit Chance: " << hitPercent << "%)... ";
+
+        if (roll <= hitPercent) {
+            int damageDealt = first->calculateDamage(second);
+            second->takeDamage(damageDealt);
+            cout << "HIT! Dealt " << damageDealt << " damage.\n";
+
+            if (first->isStrongAgainst(second->getClassType())) {
+                cout << "  -> Class Advantage! Super effective (+50% bonus damage)!\n";
+            }
+        }
+        else {
+            cout << "MISSED!\n";
+        }
+
+        // Second unit attacks back if still alive
+        if (second->isAlive()) {
+            hitPercent = second->CalcHitRate(first);
+            roll = (rand() % 100) + 1;
+
+            cout << second->getName() << " attacks " << first->getName()
+                << " (Hit Chance: " << hitPercent << "%)... ";
+
+            if (roll <= hitPercent) {
+                int damageDealt = second->calculateDamage(first);
+                first->takeDamage(damageDealt);
+                cout << "HIT! Dealt " << damageDealt << " damage.\n";
+
+                if (second->isStrongAgainst(first->getClassType())) {
+                    cout << "  -> Class Advantage! Super effective (+50% bonus damage)!\n";
+                }
+            }
+            else {
+                cout << "MISSED!\n";
+            }
+        }
+
+        cout << "\n[Status Update]\n";
+        cout << player->getName() << " HP: " << player->getCurrentHp() << "/" << player->getMaxHp() << endl;
+        cout << enemy->getName() << " HP: " << enemy->getCurrentHp() << "/" << enemy->getMaxHp() << endl;
+
+        turnCount++;
+        system("pause");
+        system("cls");
+    }
+
+    return player->isAlive();
+}
+
+// Runs the game loop
+inline void runGame() {
+    cout << "=====================\n";
+    cout << "WELCOME TO THE ARENA \n";
+    cout << "=====================\n";
+
+    system("pause");
+    system("cls");
+
+    cout << "Welcome dear adventurer, may we get started?\n";
+    cout << "Create your fighter!\n\n";
+
+    system("pause");
+    system("cls");
+
+    Unit* player = createPlayer();
+    int stage = 1;
+
+    while (true) {
+        Unit* enemy = spawnEnemy(stage);
+
+        bool won = startBattle(player, enemy, stage);
+
+        if (won) {
+            cout << "==============================\n";
+            cout << "VICTORY! You defeated " << enemy->getName() << "!\n";
+            cout << "==============================\n";
+
+            player->applyVictoryBonus(enemy->getClassType());
+            player->healPercentage(0.30);
+
+            delete enemy;
+
+            stage++;
+            system("pause");
+            system("cls");
+        }
+        else {
+            cout << "===============\n";
+            cout << "    DEFEATED!   \n";
+            cout << "===============\n";
+            cout << player->getName() << " fell in battle.\n";
+            cout << "You progressed up to Stage: " << stage << endl;
+
+            delete enemy;
+
+            break;
+        }
+    }
+
+    delete player;
+
+    cout << "\nJourney's over, adventurer, step into the light at once.\n";
+}
+
+------------------------------------------------------------------------------------------------------
+
+#endif
+#include <ctime>
+#include "Game.h"
+
+int main() {
+    srand(time(0));
+    runGame();
+    return 0;
+}
