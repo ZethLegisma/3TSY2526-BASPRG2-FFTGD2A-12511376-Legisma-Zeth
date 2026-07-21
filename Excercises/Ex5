@@ -1,0 +1,125 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+
+using namespace std;
+
+//Ex 5-1
+class Unit {
+public:
+    string name;
+    int hp;
+    int power;
+    int vitality;
+    int dexterity;
+    int agility;
+
+    Unit(string n, int h, int p, int v, int d, int a)
+        : name(n), hp(h), power(p), vitality(v), dexterity(d), agility(a) {
+    }
+
+    void showStats() {
+        cout << "===== " << name << "'s Stats =====\n";
+        cout << "HP        : " << hp << "\n";
+        cout << "Power     : " << power << "\n";
+        cout << "Vitality  : " << vitality << "\n";
+        cout << "Dexterity : " << dexterity << "\n";
+        cout << "Agility   : " << agility << "\n";
+        cout << "===========================\n";
+    }
+};
+
+//Ex 5-2
+class Magic {
+public:
+    string name;
+
+    Magic(string n) : name(n) {}
+
+    virtual void use(Unit& target) {}
+};
+
+//Ex 5-3
+class HealCast : public Magic {
+public:
+    HealCast() : Magic("Heal") {}
+
+    void use(Unit& target) override {
+        if (target.hp >= 100) {
+            cout << name << " casted HUZZAH! | HP is MAXED (100)! No effect awwww.\n\n";
+        }
+        else {
+            target.hp += 10;
+            if (target.hp > 100) target.hp = 100;
+            cout << name << " casted HUZZAH! | HP increased by 10!\n\n";
+        }
+    }
+};
+
+class MightCast : public Magic {
+public:
+    MightCast() : Magic("Might") {}
+
+    void use(Unit& target) override {
+        target.power += 2;
+        cout << name << " casted HUZZAH! | Power increased by 2!\n\n";
+    }
+};
+
+class IronSkinCast : public Magic {
+public:
+    IronSkinCast() : Magic("Iron Skin") {}
+
+    void use(Unit& target) override {
+        target.vitality += 2;
+        cout << name << " casted HUZZAH! | Vitality increased by 2!\n\n";
+    }
+};
+
+class ConcentrationCast : public Magic {
+public:
+    ConcentrationCast() : Magic("Concentration") {}
+
+    void use(Unit& target) override {
+        target.dexterity += 2;
+        cout << name << " casted HUZZAH! | Dexterity increased by 2!\n\n";
+    }
+};
+
+class HasteCast : public Magic {
+public:
+    HasteCast() : Magic("Haste") {}
+
+    void use(Unit& target) override {
+        target.agility += 2;
+        cout << name << " casted HUZZAH! | Agility increased by 2!\n\n";
+    }
+};
+
+//Ex 5-4
+int main() {
+    srand(time(0));
+
+    Unit hero("Mr. Hero", 67, 120, 69, 22, 85);
+    vector<Magic*> spells = {
+        new HealCast(),
+        new MightCast(),
+        new IronSkinCast(),
+        new ConcentrationCast(),
+        new HasteCast()
+    };
+
+    while (true) {
+        int index = rand() % spells.size();
+        spells[index]->use(hero);
+        hero.showStats();
+
+        cout << "\n";
+        system("pause");
+        system("cls");
+    }
+
+    return 0;
+}
